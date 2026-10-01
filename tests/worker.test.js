@@ -21,6 +21,8 @@ function createWorker() {
   const sandbox = {
     console,
     Uint8Array,
+    Int16Array,
+    Int32Array,
     Set,
     Map,
   };
@@ -105,6 +107,62 @@ test('Worker：非法输入一次性回传全部错误', () => {
   const m = w.messages[0];
   assert.equal(m.result.ok, false);
   assert.ok(m.result.errors.length >= 3, '应同时包含缺失端口/重名/非法目标等多个错误');
+});
+
+test('Worker：容差成功回包带操作链、组内残余与冻结摘要', () => {
+  const w = createWorker();
+  w.post(
+    {
+      ports: 'A B C D',
+      operations: [{ name: 'rotate', mapping: '(A B C D)' }],
+      target: '(A C)',
+      groups: 'A B; C D',
+    },
+    11
+  );
+  const m = w.messages[0];
+  assert.equal(m.requestId, 11);
+  assert.equal(m.result.ok, true);
+  assert.equal(m.result.member, true);
+  assert.equal(m.result.tolerance, true);
+  assert.ok(Array.isArray(m.result.factorWord));
+  assert.ok(m.result.steps.length >= 1);
+  assert.ok(m.result.residualByGroup.some((g) => g.moved));
+  assert.equal(JSON.stringify(m.result.frozenInput.groups), '[["A","B"],["C","D"]]');
+});
+
+test('Worker：容差失败回包带首阻塞层、允许轨道与目标组证据', () => {
+  const w = createWorker();
+  w.post(
+    {
+      ports: 'A B C D',
+      operations: [{ name: 'rotate', mapping: '(A B C D)' }],
+      target: '(B C)',
+      groups: 'A B; C D',
+    },
+    12
+  );
+  const m = w.messages[0];
+  assert.equal(m.result.member, false);
+  assert.equal(m.result.reason, 'blocked-tolerance');
+  assert.ok(Array.isArray(m.result.evidence.allowedOrbitNames));
+  assert.ok(m.result.evidence.targetBlockPortNames.includes('A'));
+});
+
+test('Worker：编组非法（未知端口/多组）一次性回传错误', () => {
+  const w = createWorker();
+  w.post(
+    {
+      ports: 'A B C',
+      operations: [{ name: 'r', mapping: '(A B C)' }],
+      target: '(A B C)',
+      groups: 'A X; A B',
+    },
+    13
+  );
+  const m = w.messages[0];
+  assert.equal(m.result.ok, false);
+  assert.ok(m.result.errors.some((e) => e.scope === 'groups'));
 });
 
 test('Worker：计算异常被捕获并以错误回包返回，requestId 保留', () => {

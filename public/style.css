@@ -47,7 +47,8 @@ main {
   margin-bottom: 20px;
 }
 
-input[type="text"] {
+input[type="text"],
+textarea {
   width: 100%;
   background: #0d1320;
   border: 1px solid var(--border);
@@ -56,9 +57,11 @@ input[type="text"] {
   padding: 9px 11px;
   font-size: 14px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  resize: vertical;
 }
 
-input[type="text"]:focus {
+input[type="text"]:focus,
+textarea:focus {
   outline: none;
   border-color: var(--accent);
 }

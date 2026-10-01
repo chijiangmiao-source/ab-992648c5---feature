@@ -1,7 +1,7 @@
 'use strict';
 /*
- * run-verify.js —— Compose verify 服务入口：
- *   1. 代码测试（node --test）：覆盖一份可导出规程与一份不可导出目标等 19 项；
+ * run-verify.js —— Compose verify 服务入口（一次性验收，按退出状态报告）：
+ *   1. 代码测试（node --test）：覆盖容差成功、容差失败与普通审计回归等 41 项；
  *   2. 构建检查（语法 + 静态资源 + 核心 API）；
  *   3. HTTP 冒烟（/healthz、审计页、静态资源、异常路径）。
  * 在 Compose 中于 web 服务健康后运行；全部通过以 0 退出，否则非零退出报告结果。
